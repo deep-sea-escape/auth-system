@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../user/user_image_picker.dart';
 
 class AuthForm extends StatefulWidget {
@@ -7,7 +8,7 @@ class AuthForm extends StatefulWidget {
     String email,
     String password,
     String userName,
-    File? image,
+    XFile? image,
     bool isLogin,
     BuildContext ctx,
   ) submitFn;
@@ -24,17 +25,17 @@ class _AuthFormState extends State<AuthForm> {
   var _userEmail = '';
   var _userName = '';
   var _userPassword = '';
-  File? _userImageFile;
+  XFile? _userImage;
 
-  void _setUserImage(File image) {
-    _userImageFile = image;
+  void _setUserImage(XFile image) {
+    _userImage = image;
   }
 
   void _trySubmit() {
     final isValid = _formKey.currentState!.validate();
     FocusScope.of(context).unfocus(); // Close Soft Keyboard !
     /*
-    if (_userImageFile == null && !_isLogin) {
+    if (_userImage == null && !_isLogin) {
       Scaffold.of(context).showSnackBar(
         SnackBar(
           content: const Text('Please pick an image.'),
@@ -51,7 +52,7 @@ class _AuthFormState extends State<AuthForm> {
         _userEmail.trim(),
         _userPassword.trim(),
         _userName.trim(),
-        _userImageFile,
+        _userImage,
         _isLogin,
         context,
       );
@@ -103,8 +104,8 @@ class _AuthFormState extends State<AuthForm> {
                       validator: (value) {
                         if (value == null ||
                             value.isEmpty ||
-                            value.length < 4) {
-                          return 'Please enter at least 4 characters.';
+                            value.length < 2) {
+                          return 'Please enter at least 2 characters.';
                         } else {
                           return null;
                         }

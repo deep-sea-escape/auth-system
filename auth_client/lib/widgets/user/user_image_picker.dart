@@ -5,7 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import './user_image.dart';
 
 class UserImagePicker extends StatefulWidget {
-  final void Function(File pickedImage)? onPicked;
+  final void Function(XFile pickedImage)? onPicked;
   const UserImagePicker({this.onPicked, Key? key}) : super(key: key);
 
   @override
@@ -64,7 +64,7 @@ class _UserImagePickerState extends State<UserImagePicker> {
       });
 
       if (pickedImageFile != null && widget.onPicked != null) {
-        widget.onPicked!(File(pickedImageFile.path));
+        widget.onPicked!(pickedImageFile);
       }
     }
   }
