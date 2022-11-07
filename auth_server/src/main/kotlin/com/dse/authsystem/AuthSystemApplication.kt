@@ -9,3 +9,6 @@ class AuthSystemApplication
 fun main(args: Array<String>) {
     runApplication<AuthSystemApplication>(*args)
 }
+
+
+
