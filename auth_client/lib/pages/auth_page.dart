@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../widgets/auth/auth_form.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthPage extends StatefulWidget {
   static const String routeName = '/auth';
@@ -15,6 +16,7 @@ class AuthPage extends StatefulWidget {
 }
 
 class _AuthPageState extends State<AuthPage> {
+  final _auth = FirebaseAuth.instance;
   var _isLoading = false;
 
   void _submitAuthForm(
@@ -28,19 +30,23 @@ class _AuthPageState extends State<AuthPage> {
     setState(() {
       _isLoading = true;
     });
-    var userCredential;
+    UserCredential? userCredential;
     try {
       if (isLogin) {
         // userCredential = SIGN_IN(email, password)
+        userCredential = await _auth.signInWithEmailAndPassword(
+            email: email, password: password);
       } else {
         // userCredential = SIGN_UP(email, password)
+        userCredential = await _auth.createUserWithEmailAndPassword(
+            email: email, password: password);
 
         if (image != null) {
           // save image file to the storage
           final ref = FirebaseStorage.instance
               .ref()
               .child('user_images')
-              .child('test.jpg');
+              .child('${userCredential.user!.uid}.jpg');
           if (kIsWeb) {
             await ref.putData(await image.readAsBytes()).then((p0) {
               print(p0);
@@ -51,7 +57,6 @@ class _AuthPageState extends State<AuthPage> {
             });
           }
         }
-
         // update user info
       }
     } on Exception catch (err) {
