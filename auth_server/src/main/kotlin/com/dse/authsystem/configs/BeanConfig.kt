@@ -15,11 +15,6 @@ import java.time.LocalDateTime
 @Configuration
 class BeanConfig {
     @Bean
-    fun passwordEncoder(): PasswordEncoder {
-        return PasswordEncoderFactories.createDelegatingPasswordEncoder()
-    }
-
-    @Bean
     fun applicationRunner(): ApplicationRunner {
         return object : ApplicationRunner {
 
