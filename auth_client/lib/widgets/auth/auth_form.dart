@@ -1,7 +1,10 @@
-import 'dart:io';
+// import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../user/user_image_picker.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class AuthForm extends StatefulWidget {
   final void Function(
@@ -29,6 +32,41 @@ class _AuthFormState extends State<AuthForm> {
 
   void _setUserImage(XFile image) {
     _userImage = image;
+  }
+
+  Future<UserCredential> signInWithGoogle() async {
+    if (kIsWeb) {
+      // Create a new provider
+      GoogleAuthProvider googleProvider = GoogleAuthProvider();
+
+      googleProvider
+          .addScope('https://www.googleapis.com/auth/contacts.readonly')
+          .addScope('https://www.googleapis.com/auth/userinfo.profile');
+
+      googleProvider.setCustomParameters({'login_hint': 'user@example.com'});
+
+      // Once signed in, return the UserCredential
+      return await FirebaseAuth.instance.signInWithPopup(googleProvider);
+
+      // Or use signInWithRedirect
+      // return await FirebaseAuth.instance.signInWithRedirect(googleProvider);
+    } else {
+      // Trigger the authentication flow
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+
+      // Obtain the auth details from the request
+      final GoogleSignInAuthentication? googleAuth =
+          await googleUser?.authentication;
+
+      // Create a new credential
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth?.accessToken,
+        idToken: googleAuth?.idToken,
+      );
+
+      // Once signed in, return the UserCredential
+      return await FirebaseAuth.instance.signInWithCredential(credential);
+    }
   }
 
   void _trySubmit() {
@@ -118,8 +156,8 @@ class _AuthFormState extends State<AuthForm> {
                   TextFormField(
                     key: const ValueKey('password'),
                     validator: (value) {
-                      if (value == null || value.isEmpty || value.length < 7) {
-                        return 'Password must be at least 7 characters long.';
+                      if (value == null || value.isEmpty || value.length < 6) {
+                        return 'Password must be at least 6 characters long.';
                       } else {
                         return null;
                       }
@@ -172,6 +210,10 @@ class _AuthFormState extends State<AuthForm> {
                             },
                             child: Text(_isLogin ? '회원가입' : '로그인')),
                       ],
+                    ),
+                    ElevatedButton(
+                      onPressed: signInWithGoogle,
+                      child: const Text('Google로 로그인'),
                     ),
                   ],
                 ],
