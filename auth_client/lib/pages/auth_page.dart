@@ -3,9 +3,10 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../widgets/auth/auth_form.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../widgets/auth/auth_form.dart';
 
 class AuthPage extends StatefulWidget {
   static const String routeName = '/auth';
@@ -31,6 +32,7 @@ class _AuthPageState extends State<AuthPage> {
       _isLoading = true;
     });
     UserCredential? userCredential;
+    String? imageUrl;
     try {
       if (isLogin) {
         // userCredential = SIGN_IN(email, password)
@@ -56,8 +58,18 @@ class _AuthPageState extends State<AuthPage> {
               print(p0);
             });
           }
+          imageUrl = await ref.getDownloadURL();
         }
         // update user info
+
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userCredential.user!.uid)
+            .set({
+          'username': username,
+          'email': email,
+          'image_url': imageUrl,
+        });
       }
     } on Exception catch (err) {
       var message = 'An error occurred, please check your credentials!';
