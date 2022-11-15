@@ -1,10 +1,11 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import './user_image.dart';
 
 class UserImagePicker extends StatefulWidget {
-  final void Function(File pickedImage)? onPicked;
+  final void Function(XFile pickedImage)? onPicked;
   const UserImagePicker({this.onPicked, Key? key}) : super(key: key);
 
   @override
@@ -12,7 +13,8 @@ class UserImagePicker extends StatefulWidget {
 }
 
 class _UserImagePickerState extends State<UserImagePicker> {
-  File? _pickedImage;
+  // File? _pickedImage;
+  ImageProvider<Object>? _pickedImage;
   ImageSource? _imageSource;
 
   void _pickImage() async {
@@ -50,12 +52,19 @@ class _UserImagePickerState extends State<UserImagePicker> {
       ); // imageQuality는 0 ~ 100 사이의 값 주는 것!
 
       setState(() {
-        _pickedImage =
-            pickedImageFile != null ? File(pickedImageFile.path) : null;
+        if (kIsWeb) {
+          _pickedImage = pickedImageFile != null
+              ? NetworkImage(pickedImageFile.path)
+              : null;
+        } else {
+          _pickedImage = pickedImageFile != null
+              ? FileImage(File(pickedImageFile.path))
+              : null;
+        }
       });
 
       if (pickedImageFile != null && widget.onPicked != null) {
-        widget.onPicked!(File(pickedImageFile.path));
+        widget.onPicked!(pickedImageFile);
       }
     }
   }
@@ -69,8 +78,7 @@ class _UserImagePickerState extends State<UserImagePicker> {
       child: Stack(
         children: [
           UserImage(
-              radius: size,
-              image: _pickedImage != null ? FileImage(_pickedImage!) : null),
+              radius: size, image: _pickedImage != null ? _pickedImage! : null),
           const Positioned(
             bottom: 0,
             right: 0,
