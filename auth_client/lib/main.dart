@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'pages/home_page.dart';
 import 'pages/auth_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,9 +23,24 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const AuthPage(),
-      initialRoute: AuthPage.routeName, // default is '/'
+      // home: const HomePage(),
+      home: StreamBuilder(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (ctx, userSnapshot) {
+          if (userSnapshot.connectionState == ConnectionState.waiting) {
+            return const CircularProgressIndicator();
+          } else {
+            if (userSnapshot.hasData) {
+              return const HomePage();
+            } else {
+              return const AuthPage();
+            }
+          }
+        },
+      ),
+      // initialRoute: HomePage.routeName, // default is '/'
       routes: {
+        HomePage.routeName: (ctx) => const HomePage(),
         AuthPage.routeName: (ctx) => const AuthPage(),
       },
       onGenerateRoute: (settings) {
