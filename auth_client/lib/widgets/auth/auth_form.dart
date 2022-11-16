@@ -2,27 +2,21 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../user/user_image_picker.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../services/auth_service.dart';
+import '../../services/email_auth_service.dart';
+import '../../services/google_auth_service.dart';
 
 class AuthForm extends StatefulWidget {
-  final void Function(
-    String email,
-    String password,
-    String userName,
-    XFile? image,
-    bool isLogin,
-    BuildContext ctx,
-  ) submitFn;
   bool isLoading;
-  AuthForm(this.submitFn, this.isLoading, {Key? key}) : super(key: key);
+  AuthForm(this.isLoading, {Key? key}) : super(key: key);
 
   @override
   State<AuthForm> createState() => _AuthFormState();
 }
 
 class _AuthFormState extends State<AuthForm> {
+  final _auth = FirebaseAuth.instance;
   final _formKey = GlobalKey<FormState>();
   var _isLogin = true;
   var _userEmail = '';
@@ -34,42 +28,29 @@ class _AuthFormState extends State<AuthForm> {
     _userImage = image;
   }
 
-  Future<UserCredential> signInWithGoogle() async {
-    if (kIsWeb) {
-      // Create a new provider
-      GoogleAuthProvider googleProvider = GoogleAuthProvider();
+  void submit(AuthService authService) async {
+    try {
+      if (_isLogin) {
+        await authService.signIn();
+      } else {
+        await authService.registerUser();
+      }
+    } catch (err) {
+      var message = 'An error occurred, please check your credentials!';
+      if (err.toString().isNotEmpty) {
+        message = err.toString();
+      }
 
-      googleProvider
-          .addScope('https://www.googleapis.com/auth/contacts.readonly')
-          .addScope('https://www.googleapis.com/auth/userinfo.profile');
-
-      googleProvider.setCustomParameters({'login_hint': 'user@example.com'});
-
-      // Once signed in, return the UserCredential
-      return await FirebaseAuth.instance.signInWithPopup(googleProvider);
-
-      // Or use signInWithRedirect
-      // return await FirebaseAuth.instance.signInWithRedirect(googleProvider);
-    } else {
-      // Trigger the authentication flow
-      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
-
-      // Obtain the auth details from the request
-      final GoogleSignInAuthentication? googleAuth =
-          await googleUser?.authentication;
-
-      // Create a new credential
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth?.accessToken,
-        idToken: googleAuth?.idToken,
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
       );
-
-      // Once signed in, return the UserCredential
-      return await FirebaseAuth.instance.signInWithCredential(credential);
     }
   }
 
-  void _trySubmit() {
+  bool validate() {
     final isValid = _formKey.currentState!.validate();
     FocusScope.of(context).unfocus(); // Close Soft Keyboard !
     /*
@@ -85,16 +66,8 @@ class _AuthFormState extends State<AuthForm> {
     */
     if (isValid) {
       _formKey.currentState!.save(); // 모든 Input의 onSaved를 발동시킴
-      // Use those values to send our auth request...
-      widget.submitFn(
-        _userEmail.trim(),
-        _userPassword.trim(),
-        _userName.trim(),
-        _userImage,
-        _isLogin,
-        context,
-      );
     }
+    return isValid;
   }
 
   @override
@@ -140,6 +113,7 @@ class _AuthFormState extends State<AuthForm> {
                       autocorrect: true,
                       textCapitalization: TextCapitalization.words,
                       validator: (value) {
+                        // 중복 체크 필요
                         if (value == null ||
                             value.isEmpty ||
                             value.length < 2) {
@@ -190,7 +164,19 @@ class _AuthFormState extends State<AuthForm> {
                       )
                     ],
                     ElevatedButton(
-                      onPressed: _trySubmit,
+                      onPressed: () {
+                        if (validate()) {
+                          _formKey.currentState!.save();
+                          submit(
+                            EmailAuthService(
+                              email: _userEmail.trim(),
+                              password: _userPassword.trim(),
+                              username: _userName.trim(),
+                              image: _userImage,
+                            ),
+                          );
+                        }
+                      },
                       child: Text(_isLogin ? '로그인' : '회원가입'),
                     ),
                     Row(
@@ -212,8 +198,13 @@ class _AuthFormState extends State<AuthForm> {
                       ],
                     ),
                     ElevatedButton(
-                      onPressed: signInWithGoogle,
-                      child: const Text('Google로 로그인'),
+                      onPressed: () {
+                        setState(() {
+                          _isLogin = false;
+                        });
+                        submit(GoogleAuthService());
+                      },
+                      child: const Text('구글 아이디로 시작하기'),
                     ),
                   ],
                 ],

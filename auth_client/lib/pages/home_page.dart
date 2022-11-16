@@ -49,7 +49,7 @@ class _HomePageState extends State<HomePage> {
                   child: Column(
                     children: [
                       UserImage(
-                          image: data == null
+                          image: data == null || data['image_url'] == null
                               ? null
                               : NetworkImage(data['image_url'])),
                       Text(_auth.currentUser!.email!),
